@@ -4,6 +4,11 @@ namespace App\controllers;
 
 class UserController
 {
+
+    public function profile()
+    {
+        var_dump("This is the profile");
+    }
     public function login()
     {
         var_dump("This is the Login");
