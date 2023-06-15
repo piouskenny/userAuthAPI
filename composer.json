@@ -1,0 +1,16 @@
+{
+    "name": "piouskenny/user-auth_api_php",
+
+    "authors": [
+        {
+            "name": "piouskenny",
+            "email": "kehindeu13@gmail.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    }
+}
