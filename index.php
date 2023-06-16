@@ -15,7 +15,7 @@ $router = new Router();
 
 $usercontroller = new UserController;
 
-$router->get('/api/v1/', [new UserController, 'profile']);
+$router->get('/api/v1/user-profile', [new UserController, 'profile']);
 
 $router->post('/api/v1/signup/', [new UserController, 'signup']);
 
