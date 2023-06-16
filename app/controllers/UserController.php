@@ -25,9 +25,7 @@ class UserController
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             die(json_encode("THE GET REQUEST IS NOT SUPPORTED FOR THIS ROUTE"));
         }
-
         $json = file_get_contents('php://input');
-
         $data = json_decode($json, true);
 
         if ($data === null) {
@@ -37,8 +35,20 @@ class UserController
 
         $name = $data['name'];
         $email = $data['email'];
+        $password = $data['password'];
 
-        echo json_encode($name . " " . $email);
+        $database = new Connection;
+
+        $sql = "INSERT INTO users (name, email, password) VALUES (`$name`, `$email`, `$password`)";
+        $query =  $database->base_query($sql);
+
+        if($query) {
+            echo json_encode(['success' => "Account Created successfull"]);
+        } else {
+            echo json_encode(['failed' => "Data cannot be sent to the database"]);
+        }
+
+
     }
 
     public function login()
