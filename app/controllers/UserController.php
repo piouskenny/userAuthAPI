@@ -81,7 +81,7 @@ class UserController
         }
 
         $username = $data['username'] ?? '';
-        $password = $data['password'] ?? '';
+        $password = md5($data['password']) ?? '';
 
         if ($username === '' || $password === '') {
             echo json_encode(['error' => "Username and password are required"]);
@@ -119,7 +119,8 @@ class UserController
 
         $username = $data['username'] ?? '';
         $email = $data['email'] ?? '';
-        $password = $data['password'] ?? '';
+        $password = md5($data['password']) ?? '';
+
 
         if ($username === '' || $email === '' || $password === '') {
             echo json_encode(['error' => "Username, email, and password are required"]);
@@ -153,7 +154,8 @@ class UserController
         }
 
         $username = $data['username'] ?? '';
-        $password = $data['password'] ?? '';
+        $password = md5($data['password']) ?? '';
+
 
         if ($username === '' || $password === '') {
             echo json_encode(['error' => "Username and password are required"]);
