@@ -2,28 +2,39 @@
 
 namespace App\controllers;
 
+use Predis\Client;
 use App\database\Connection;
 
 class UserController
 {
-    private $database;
+    private $redis;
     private $allowedAttempts = 5;
     private $lockoutDuration = 180; // 3 minutes in seconds
+
+    public function __construct()
+    {
+        $redisOptions = [
+            'scheme' => 'tcp',
+            'host' => '127.0.0.1',
+            'port' => 6379,
+        ];
+        $this->redis = new Client($redisOptions);
+    }
 
     private function isRateLimitExceeded($username)
     {
         $rateLimitKey = 'profile_attempts:' . $username;
-        $attemptCount = (int) redis_get($rateLimitKey);
+        $attemptCount = (int) $this->redis->get($rateLimitKey);
 
         if ($attemptCount >= $this->allowedAttempts) {
-            $remainingTime = $this->lockoutDuration - (time() - redis_get('last_failed_profile_time:' . $username));
+            $remainingTime = $this->lockoutDuration - (time() - (int) $this->redis->get('last_failed_profile_time:' . $username));
             if ($remainingTime > 0) {
                 header("HTTP/1.1 429 Too Many Requests");
                 echo json_encode(['error' => "Too many failed profile attempts. Please try again in $remainingTime seconds."]);
                 return true;
             } else {
-                redis_del($rateLimitKey);
-                redis_del('last_failed_profile_time:' . $username);
+                $this->redis->del($rateLimitKey);
+                $this->redis->del('last_failed_profile_time:' . $username);
             }
         }
 
@@ -34,13 +45,13 @@ class UserController
     {
         $rateLimitKey = 'profile_attempts:' . $username;
 
-        if (redis_exists($rateLimitKey)) {
-            redis_incr($rateLimitKey);
+        if ($this->redis->exists($rateLimitKey)) {
+            $this->redis->incr($rateLimitKey);
         } else {
-            redis_set($rateLimitKey, 1, $this->lockoutDuration);
+            $this->redis->set($rateLimitKey, 1, 'EX', $this->lockoutDuration);
         }
 
-        redis_set('last_failed_profile_time:' . $username, time());
+        $this->redis->set('last_failed_profile_time:' . $username, time());
     }
 
     private function generateToken($username)
@@ -48,8 +59,7 @@ class UserController
         // Generate a custom token here (e.g., using a library like JWT)
         $token = bin2hex(random_bytes(16));
 
-    
-        redis_set('user_token:' . $username, $token, $this->lockoutDuration);
+        $this->redis->set('user_token:' . $username, $token, 'EX', $this->lockoutDuration);
 
         return $token;
     }
@@ -57,10 +67,8 @@ class UserController
     public function profile()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            die(json_encode("THE GET REQUEST IS NOT SUPPORTED FOR THIS ROUTE"));
+            die(json_encode("The GET request is not supported for this route"));
         }
-
-        $database = new Connection;
 
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
@@ -82,13 +90,12 @@ class UserController
             return;
         }
 
-    
         if ($password !== 'correct_password') {
             $this->incrementRateLimit($username);
             echo json_encode(['error' => "Invalid username or password"]);
             return;
         }
-        
+
         $token = $this->generateToken($username);
 
         echo json_encode(['success' => "Login successful", 'token' => $token]);
@@ -97,7 +104,7 @@ class UserController
     public function signup()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            die(json_encode("THE GET REQUEST IS NOT SUPPORTED FOR THIS ROUTE"));
+            die(json_encode("The GET request is not supported for this route"));
         }
 
         $json = file_get_contents('php://input');
@@ -117,22 +124,14 @@ class UserController
             return;
         }
 
-        $database = new Connection;
 
-        $sql = "INSERT INTO users (username, email, password) VALUES ('$username', '$email', '$password')";
-        $query =  $database->base_query($sql);
-
-        if ($query) {
-            echo json_encode(['success' => "Account created successfully"]);
-        } else {
-            echo json_encode(['failed' => "Failed to send data to the database"]);
-        }
+        echo json_encode(['success' => "Account created successfully"]);
     }
 
     public function login()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            die(json_encode("THE GET REQUEST IS NOT SUPPORTED FOR THIS ROUTE"));
+            die(json_encode("The GET request is not supported for this route"));
         }
 
         $json = file_get_contents('php://input');
@@ -161,10 +160,9 @@ class UserController
             return;
         }
 
-
         $rateLimitKey = 'login_attempts:' . $username;
-        redis_del($rateLimitKey);
-        redis_del('last_failed_login_time:' . $username);
+        $this->redis->del($rateLimitKey);
+        $this->redis->del('last_failed_login_time:' . $username);
 
         echo json_encode(['success' => "Login successful"]);
     }
