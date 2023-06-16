@@ -11,23 +11,41 @@ class UserController
 
     public function profile()
     {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            die(json_encode("THE GET REQUEST IS NOT SUPPORTED FOR THIS ROUTE"));
+        }
+
         $database = new Connection;
-        echo json_encode("profile Page");
+
+        echo json_encode(['success' => "Profile Pages"]);
     }
 
     public function signup()
     {
-        echo json_encode("Signup");
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            die(json_encode("THE GET REQUEST IS NOT SUPPORTED FOR THIS ROUTE"));
+        }
 
-        $jsonPayload = file_get_contents('php://input');
+        $json = file_get_contents('php://input');
 
-        $data = json_decode($jsonPayload, true);
+        $data = json_decode($json, true);
 
-        echo $data;
+        if ($data === null) {
+            echo json_encode(['error' => "Data cannot be empty"]);
+            return;
+        }
+
+        $name = $data['name'];
+        $email = $data['email'];
+
+        echo json_encode($name . " " . $email);
     }
 
     public function login()
     {
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            echo json_encode("THE GET REQUEST IS NOT SUPPORTED FOR THIS ROUTE");
+        }
         // var_dump("This is the Login");
 
         echo json_encode("login");

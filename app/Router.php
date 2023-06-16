@@ -14,10 +14,7 @@ class Router
 
     public function post($url, $fn)
     {
-        if($_SERVER['REQUEST_METHOD'] === 'GET') {
-            echo json_encode("THE GET REQUEST IS NOT SUPPORTED FOR THIS ROUTE");
-        }
-        $this->getRoutes[$url] = $fn;
+        $this->postRoutes[$url] = $fn;
     }
 
     public function  resolve()
@@ -29,14 +26,12 @@ class Router
         if ($method === 'GET') {
             $fn = $this->getRoutes[$current_url] ?? null;
         } elseif ($method === 'POST') {
-            echo json_encode("Testing Post Request");
-
             $fn = $this->postRoutes[$current_url] ?? null;
         }
 
+
         if ($fn) {
             call_user_func($fn);
-            // print_r($fn);
         } else {
             echo "Page Not found";
         }
