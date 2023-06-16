@@ -179,18 +179,18 @@ class UserController
             echo json_encode(['failed' => "No Username foundd for $username"]);
             return;
         }
-        // if ($this->isRateLimitExceeded($username)) {
-        //     return;
-        // }
+        if ($this->isRateLimitExceeded($username)) {
+            return;
+        }
         if (password_verify($password, $user['password'])) {
             // $this->incrementRateLimit($username);
             echo json_encode(['error' => "Invalid username or password"]);
             return;
         }
 
-        // $rateLimitKey = 'login_attempts:' . $username;
-        // $this->redis->del($rateLimitKey);
-        // $this->redis->del('last_failed_login_time:' . $username);
+        $rateLimitKey = 'login_attempts:' . $username;
+        $this->redis->del($rateLimitKey);
+        $this->redis->del('last_failed_login_time:' . $username);
         echo json_encode(['success' => "Login successful"]);
 
         return header('Location:http://localhost:8080/api/v1//api/v1/user-profile/');
