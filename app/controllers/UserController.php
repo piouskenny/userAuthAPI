@@ -2,6 +2,8 @@
 
 namespace App\controllers;
 
+require __DIR__ . "/../../vendor/autoload.php";
+
 use Predis\Client;
 use App\database\Connection;
 
@@ -71,6 +73,9 @@ class UserController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             die(json_encode("The GET request is not supported for this route"));
         }
+
+        echo json_encode(['success' => "Login successful to the profile"]);
+
 
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
@@ -161,21 +166,33 @@ class UserController
             echo json_encode(['error' => "Username and password are required"]);
             return;
         }
+        $database = new Connection;
 
-        if ($this->isRateLimitExceeded($username)) {
+        $sql = "SELECT * FROM users WHERE username = '$username' LIMIT 1";
+
+        $query = $database->base_query($sql);
+
+        $user = $query->fetch_assoc();
+
+
+        if (!$user) {
+            echo json_encode(['failed' => "No Username foundd for $username"]);
             return;
         }
-
-        if ($password !== 'correct_password') {
-            $this->incrementRateLimit($username);
+        // if ($this->isRateLimitExceeded($username)) {
+        //     return;
+        // }
+        if (password_verify($password, $user['password'])) {
+            // $this->incrementRateLimit($username);
             echo json_encode(['error' => "Invalid username or password"]);
             return;
         }
 
-        $rateLimitKey = 'login_attempts:' . $username;
-        $this->redis->del($rateLimitKey);
-        $this->redis->del('last_failed_login_time:' . $username);
-
+        // $rateLimitKey = 'login_attempts:' . $username;
+        // $this->redis->del($rateLimitKey);
+        // $this->redis->del('last_failed_login_time:' . $username);
         echo json_encode(['success' => "Login successful"]);
+
+        return header('Location:http://localhost:8080/api/v1//api/v1/user-profile/');
     }
 }
