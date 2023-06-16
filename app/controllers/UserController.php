@@ -22,9 +22,7 @@ class UserController
         $jsonPayload = file_get_contents('php://input');
 
         $data = json_decode($jsonPayload, true);
-        // $test = [
-        //     "name" => "piouskenny"
-        // ];
+
         echo $data;
     }
 

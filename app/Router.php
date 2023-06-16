@@ -14,6 +14,9 @@ class Router
 
     public function post($url, $fn)
     {
+        if($_SERVER['REQUEST_METHOD'] === 'GET') {
+            echo json_encode("THE GET REQUEST IS NOT SUPPORTED FOR THIS ROUTE");
+        }
         $this->getRoutes[$url] = $fn;
     }
 
@@ -25,7 +28,9 @@ class Router
 
         if ($method === 'GET') {
             $fn = $this->getRoutes[$current_url] ?? null;
-        } else {
+        } elseif ($method === 'POST') {
+            echo json_encode("Testing Post Request");
+
             $fn = $this->postRoutes[$current_url] ?? null;
         }
 
