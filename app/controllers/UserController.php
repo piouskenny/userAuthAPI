@@ -11,6 +11,8 @@ class UserController
     private $allowedAttempts = 5;
     private $lockoutDuration = 180; // 3 minutes in seconds
 
+    private $database;
+
     public function __construct()
     {
         $redisOptions = [
@@ -124,8 +126,16 @@ class UserController
             return;
         }
 
+        $database = new Connection;
 
-        echo json_encode(['success' => "Account created successfully"]);
+        $sql = "INSERT INTO users (username, email, password) VALUES ('$username', '$email', '$password')";
+
+        $database->base_query($sql);
+        if ($database) {
+            echo json_encode(['success' => "Account created successfully"]);
+        } else {
+            echo json_encode(['failed' => "Account created failed"]);
+        }
     }
 
     public function login()
