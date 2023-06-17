@@ -183,7 +183,7 @@ class UserController
             return;
         }
         if (password_verify($password, $user['password'])) {
-            // $this->incrementRateLimit($username);
+            $this->incrementRateLimit($username);
             echo json_encode(['error' => "Invalid username or password"]);
             return;
         }
