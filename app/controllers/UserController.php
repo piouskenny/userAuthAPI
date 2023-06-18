@@ -74,38 +74,35 @@ class UserController
             die(json_encode("The GET request is not supported for this route"));
         }
 
-        echo json_encode(['success' => "Login successful to the profile"]);
+
+        $username = $_GET['username'];
+        $token = $_GET['token'];
 
 
-        $json = file_get_contents('php://input');
-        $data = json_decode($json, true);
+        $database = new Connection;
 
-        if ($data === null) {
-            echo json_encode(['error' => "Invalid JSON data"]);
-            return;
-        }
+        $sql = "SELECT * FROM users WHERE username = '$username' LIMIT 1";
 
-        $username = $data['username'] ?? '';
-        $password = md5($data['password']) ?? '';
+        $query = $database->base_query($sql);
 
-        if ($username === '' || $password === '') {
-            echo json_encode(['error' => "Username and password are required"]);
-            return;
-        }
+        $user = $query->fetch_assoc();
+
+
+        $username = $user['username'] ?? '';
+        $email = $user['email'] ?? '';
+        $storedToken = $this->redis->get('user_token:' . $username);
+
 
         if ($this->isRateLimitExceeded($username)) {
             return;
         }
 
-        if ($password !== 'correct_password') {
-            $this->incrementRateLimit($username);
-            echo json_encode(['error' => "Invalid username or password"]);
+        if ($token !== $storedToken) {
+            echo json_encode(['failed' => "Invalid Token"]);
             return;
         }
 
-        $token = $this->generateToken($username);
-
-        echo json_encode(['success' => "Login successful", 'token' => $token]);
+        echo json_encode(['success' => "Login successful", 'userToken' => $storedToken, 'username' => $username, 'email' => $email]);
     }
 
     public function signup()
@@ -161,11 +158,6 @@ class UserController
         $username = $data['username'] ?? '';
         $password = md5($data['password']) ?? '';
 
-
-        if ($username === '' || $password === '') {
-            echo json_encode(['error' => "Username and password are required"]);
-            return;
-        }
         $database = new Connection;
 
         $sql = "SELECT * FROM users WHERE username = '$username' LIMIT 1";
@@ -179,20 +171,24 @@ class UserController
             echo json_encode(['failed' => "No Username foundd for $username"]);
             return;
         }
+
         if ($this->isRateLimitExceeded($username)) {
             return;
         }
-        if (password_verify($password, $user['password'])) {
+
+        if ($password !== $user['password']) {
             $this->incrementRateLimit($username);
             echo json_encode(['error' => "Invalid username or password"]);
             return;
         }
 
+        $token = $this->generateToken($username);
         $rateLimitKey = 'login_attempts:' . $username;
         $this->redis->del($rateLimitKey);
         $this->redis->del('last_failed_login_time:' . $username);
+
         echo json_encode(['success' => "Login successful"]);
 
-        return header('Location:http://localhost:8080/api/v1//api/v1/user-profile/');
+        return header('Location: /api/v1/user-profile?username=' . urlencode($username) . '&token=' . urlencode($token));
     }
 }
