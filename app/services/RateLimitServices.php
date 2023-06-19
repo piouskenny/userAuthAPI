@@ -62,9 +62,7 @@ class RateLimitServices
     {
         // Generate a custom token here (e.g., using a library like JWT)
         $token = bin2hex(random_bytes(16));
-
         $this->redis->set('user_token:' . $username, $token, 'EX', $this->lockoutDuration);
-
         return $token;
     }
 }
