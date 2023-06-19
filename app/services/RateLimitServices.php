@@ -28,6 +28,7 @@ class RateLimitServices
     public function isRateLimitExceeded($username)
     {
         $rateLimitKey = 'profile_attempts:' . $username;
+
         $attemptCount = (int) $this->redis->get($rateLimitKey);
 
         if ($attemptCount >= $this->allowedAttempts) {
@@ -41,7 +42,6 @@ class RateLimitServices
                 $this->redis->del('last_failed_profile_time:' . $username);
             }
         }
-
         return false;
     }
 
