@@ -7,7 +7,6 @@ require __DIR__ . "/../../vendor/autoload.php";
 use App\database\Connection;
 use App\Services\RateLimitServices;
 use Predis\Client;
-use App\Services\RedisCall;
 
 class UserController
 {
