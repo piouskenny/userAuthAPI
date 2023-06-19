@@ -5,27 +5,42 @@ namespace App\controllers;
 require __DIR__ . "/../../vendor/autoload.php";
 
 use App\database\Connection;
-
 use App\Services\RateLimitServices;
 use Predis\Client;
+use App\Services\RedisCall;
 
 class UserController
 {
     private $RateLimitService;
     private $redis;
 
+
+    public function __construct()
+    {
+        $redisOptions = [
+            'scheme' => 'tcp',
+            'host' => '127.0.0.1',
+            'port' => 6379,
+        ];
+
+        $this->redis = new Client($redisOptions);
+    }
+
     public function profile()
     {
-        $RateLimitService = new RateLimitServices;
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             die(json_encode("The GET request is not supported for this route"));
         }
 
 
-        $username = $_GET['username'];
-        $token = $_GET['token'];
+        $username = $_GET['username'] ?? "";
+        $token = $_GET['token'] ?? "";
 
+        if ($username == "" || $token == "") {
+            echo json_encode(["error" => "sorry you have to login to access this page"]);
+            return;
+        }
 
         $database = new Connection;
 
@@ -35,13 +50,15 @@ class UserController
 
         $user = $query->fetch_assoc();
 
+        $this->RateLimitService = new RateLimitServices;
+
 
         $username = $user['username'] ?? '';
         $email = $user['email'] ?? '';
         $storedToken = $this->redis->get('user_token:' . $username);
 
 
-        if ($RateLimitService->isRateLimitExceeded($username)) {
+        if ($this->RateLimitService->isRateLimitExceeded($username)) {
             return;
         }
 
@@ -91,7 +108,6 @@ class UserController
 
     public function login()
     {
-        $RateLimitService = new RateLimitServices;
 
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             die(json_encode("The GET request is not supported for this route"));
@@ -122,18 +138,21 @@ class UserController
             return;
         }
 
-        if ($RateLimitService->isRateLimitExceeded($username)) {
+        $this->RateLimitService = new RateLimitServices;
+
+        if ($this->RateLimitService->isRateLimitExceeded($username)) {
             return;
         }
 
         if ($password !== $user['password']) {
-            $RateLimitService->incrementRateLimit($username);
+            $this->RateLimitService->incrementRateLimit($username);
             echo json_encode(['error' => "Invalid username or password"]);
             return;
         }
 
-        $token = $RateLimitService->generateToken($username);
+        $token = $this->RateLimitService->generateToken($username);
         $rateLimitKey = 'login_attempts:' . $username;
+
         $this->redis->del($rateLimitKey);
         $this->redis->del('last_failed_login_time:' . $username);
 

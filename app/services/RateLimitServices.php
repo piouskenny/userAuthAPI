@@ -9,11 +9,10 @@ use Predis\Client;
 
 class RateLimitServices
 {
-    private $redis;
+    public $redis;
     private $allowedAttempts = 5;
     private $lockoutDuration = 180; // 3 minutes in seconds
 
-    private $database;
 
     public function __construct()
     {
@@ -22,6 +21,7 @@ class RateLimitServices
             'host' => '127.0.0.1',
             'port' => 6379,
         ];
+
         $this->redis = new Client($redisOptions);
     }
 
