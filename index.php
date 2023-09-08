@@ -6,10 +6,6 @@ use App\controllers\UserController;
 
 use App\Router;
 
-$usercontroller = new UserController;
-
-// $usercontroller->profile();
-
 
 $router = new Router();
 
